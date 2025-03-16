@@ -1,0 +1,5 @@
+skyfield
+requests
+fastapi
+uvicorn
+pydantic
