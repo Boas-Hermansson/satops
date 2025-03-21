@@ -9,57 +9,18 @@ from datetime import datetime, timezone, timedelta
 from skyfield.api import load, wgs84
 import subprocess
 
-GS_LOGS = 'logs/groundstation.log'
+from api_logging_config import LOGGING_CONFIG
 
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
+#GS_LOGS = 'logs/groundstation.log'
+logging.config.dictConfig(LOGGING_CONFIG)
+#formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
 
 # Configure general logger
-logger = logging.getLogger("Groundstation")
-hdlr = logging.FileHandler(GS_LOGS)
-hdlr.setFormatter(formatter)
-logger.setLevel(logging.INFO)
-logger.addHandler(hdlr)
-
-# API logger config
-API_LOGGING_CONFIG = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "custom": {
-            "format": "%(asctime)s - %(levelname)s - %(message)s"
-        }
-    },
-    "handlers": {
-        "console": {  # Console handler
-            "class": "logging.StreamHandler",
-            "formatter": "custom",
-            "stream": "ext://sys.stdout",
-        },
-        "file": {  # File handler
-            "class": "logging.FileHandler",
-            "formatter": "custom",
-            "filename": "logs/api.log",
-            "mode": "a",  # Append mode
-        },
-    },
-    "loggers": {
-        "uvicorn": {
-            "handlers": ["console", "file"],  # Log to both console and file
-            "level": "INFO",
-            "propagate": False,
-        },
-        "uvicorn.access": {
-            "handlers": ["console", "file"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "uvicorn.error": {
-            "handlers": ["console", "file"],
-            "level": "ERROR",
-            "propagate": False,
-        },
-    },
-}
+logger = logging.getLogger("groundstation")
+#hdlr = logging.FileHandler(GS_LOGS)
+#hdlr.setFormatter(formatter)
+#logger.setLevel(logging.INFO)
+#logger.addHandler(hdlr)
 
 app = FastAPI()
 
@@ -68,7 +29,7 @@ tracker = SatelliteTracker(logger)
 
 # API endpoints
 @app.get('/satellite')
-def get_satellite_info():
+async def get_satellite_info():
     """Get information about the tracked satellite"""
     return {
         "name": tracker.satellite_name,
@@ -77,7 +38,7 @@ def get_satellite_info():
     }
 
 @app.get('/satellite/position')
-def get_satellite_position():
+async def get_satellite_position():
     """Get current position of the satellite"""
     position = tracker.get_sat_position()
     if position:
@@ -85,7 +46,7 @@ def get_satellite_position():
     raise HTTPException(status_code=404, detail="Satellite position not available")
 
 @app.get('/satellite/passes')
-def get_satellite_passes(
+async def get_satellite_passes(
     days: int = 1,
     min_elevation: float = 10.0
 ):
@@ -101,7 +62,7 @@ def get_satellite_passes(
     return [p.to_dict() for p in passes]
 
 @app.get('/satellite/next-pass')
-def get_next_pass(
+async def get_next_pass(
     min_elevation: float = 10.0    
 ):
     """Get the next pass for the satellite""" 
@@ -114,31 +75,31 @@ def get_next_pass(
     return next_pass.to_dict()
 
 @app.post('/satellite/reload_tle')
-def reload_sat_tle():
+async def reload_sat_tle():
     """Reload the starfield satellite object with fresh tle data."""
     success = tracker.reload_satellite()
     return {"success": success}
 
 @app.post('/satellite/track/start')
-def start_satellite_tracking():
+async def start_satellite_tracking():
     """Start tracking the satellite"""
     success = tracker.start_tracking()
     return {"success": success}
 
 @app.post('/satellite/track/stop')
-def stop_satellite_tracking():
+async def stop_satellite_tracking():
     """Stop tracking the satellite"""
     success = tracker.stop_tracking()
     return {"success": success}
 
 @app.get('/satellite/track/data')
-def get_tracking_data():
+async def get_tracking_data():
     """Get the latest tracking data"""
     data = tracker.get_tracking_data()
     return data
 
 @app.get('/system/location')
-def get_location():
+async def get_location():
     """Get the current observer location"""
     location = tracker.location
     return {
@@ -147,7 +108,7 @@ def get_location():
     }
 
 @app.post('/system/location')
-def set_location(
+async def set_location(
     latitude: float,
     longitude: float
 ):
@@ -173,7 +134,7 @@ def set_location(
 @app.get('') #Get system logs
 
 @app.get('/system/status')
-def system_status():
+async def system_status():
     """Get the system status"""
     return {
         "running": True,
@@ -184,7 +145,7 @@ def system_status():
     }
 
 @app.get('/rotor/status')
-def rotor_status():
+async def rotor_status():
     """Get the rotor status from rotctl"""
     try:
         output = subprocess.check_output(["rotctl", "p"]).splitlines()
@@ -200,7 +161,7 @@ def rotor_status():
         }
     
 @app.post('/rotor/control')
-def rotor_control(
+async def rotor_control(
     azimuth: int,
     elevation: int
 ):
@@ -223,6 +184,5 @@ def rotor_control(
 
 if __name__ == "__main__":
     # Automatically create the logs folder if not there
-    cwd = os.getcwd()
     os.makedirs("logs", exist_ok=True)
-    uvicorn.run("server:app", host="0.0.0.0", port=5000, reload=True, log_config=API_LOGGING_CONFIG)
+    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
