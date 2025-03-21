@@ -1,6 +1,0 @@
-2025-03-21 08:52:46,032 - INFO - 127.0.0.1:55568 - "GET /satellite/passes?days=2&min_elevation=20 HTTP/1.1" 200
-2025-03-21 08:53:08,497 - INFO - 127.0.0.1:37814 - "GET /satellite/passes?days=2&min_elevation=20 HTTP/1.1" 200
-2025-03-21 08:53:09,526 - INFO - 127.0.0.1:37094 - "GET /satellite/passes?days=2&min_elevation=20 HTTP/1.1" 200
-2025-03-21 08:53:10,265 - INFO - 127.0.0.1:37104 - "GET /satellite/passes?days=2&min_elevation=20 HTTP/1.1" 200
-2025-03-21 08:53:11,052 - INFO - 127.0.0.1:37118 - "GET /satellite/passes?days=2&min_elevation=20 HTTP/1.1" 200
-2025-03-21 08:53:20,950 - INFO - 127.0.0.1:38232 - "GET /satellite/passes?days=2&min_elevation=1 HTTP/1.1" 400

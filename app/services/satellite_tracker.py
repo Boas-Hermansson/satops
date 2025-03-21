@@ -10,6 +10,9 @@ from skyfield.iokit import parse_tle_file
 from pydantic import BaseModel
 import subprocess
 
+CONFIG_DIR = os.path.join(os.path.dirname(__file__), "../config")
+TLE_FILE_PATH = os.path.join(CONFIG_DIR, "disco.tle")
+
 class Pass(BaseModel):
     # Times are in UTC
     rise: datetime
@@ -73,12 +76,12 @@ class SatelliteTracker:
     def load_satellite(self) -> bool:
         """Load the satellite from its TLE file"""        
         # Check if file exists
-        if not os.path.exists(self.tle_file):
+        if not os.path.exists(TLE_FILE_PATH):
             self.gs_logger.error(f"TLE file not found")
             return False
         
         try:
-            with load.open(self.tle_file) as f:
+            with load.open(TLE_FILE_PATH) as f:
                 satellites = list(parse_tle_file(f, self.ts))
             
             if not satellites:

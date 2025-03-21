@@ -1,0 +1,5 @@
+2025-03-21 09:27:02,059 - INFO - Starting FastAPI server with uvicorn
+2025-03-21 09:29:59,118 - INFO - Starting FastAPI server with uvicorn
+2025-03-21 09:31:02,562 - INFO - Waiting until rise time for ISS (ZARYA): 2025-03-21 16:31:46.760690+00:00
+2025-03-21 09:31:02,563 - INFO - Started tracking ISS (ZARYA), next pass at 2025-03-21 16:31:46.760690+00:00
+2025-03-21 09:31:21,951 - INFO - Stopped tracking satellite ISS (ZARYA)
