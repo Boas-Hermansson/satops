@@ -1,1 +1,5 @@
 .venv
+logs/api.log
+logs/groundstation.log
+app/__pycache__
+__pycache__
