@@ -3,9 +3,13 @@ from fastapi import APIRouter, HTTPException
 
 rotor_router = APIRouter()
 
+
+
+
 @rotor_router.get('/status')
 async def rotor_status():
     """Get the rotor status from rotctl"""
+    # TODO try to connect using sockets instead
     try:
         output = subprocess.check_output(["tctl", "p"]).splitlines()
         azimuth = output[0].decode()

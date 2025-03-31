@@ -9,9 +9,35 @@ from skyfield.api import load, wgs84
 from skyfield.iokit import parse_tle_file
 from pydantic import BaseModel
 import subprocess
+import socket
 
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), "../config")
 TLE_FILE_PATH = os.path.join(CONFIG_DIR, "disco.tle")
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(("192.168.1.9", 4533))
+
+
+def write_rotor(az, el):
+    global sock
+    sock.send((f"P {az} {el}").encode())
+    # this is the return code for rotctl on the
+    # rotator device. we just throw this value away
+    # still important we read it, so the socket is empty
+    res = sock.recv(64).decode()
+
+def read_rotor():
+    global sock
+    sock.send("p".encode())
+    received = sock.recv(64).decode()
+    received = received.splitlines()
+    
+    # the output is decoded like this for clarity
+    az = received[0]
+    el = received[1]
+    return az, el
+
+
 
 class Pass(BaseModel):
     # Times are in UTC
@@ -251,7 +277,9 @@ class SatelliteTracker:
             alt, az, distance = topocentric.altaz()
             
             # Send azimuth, elevation to rotctl
-            subprocess.run(["rotctl", "P", az.degrees, alt.degrees])
+            # subprocess.run(["rotctl", "P", az.degrees, alt.degrees])
+            write_rotor(az.degrees, alt.degrees)
+            
             self.gs_logger.info(f"Setting azimuth: {az.degrees}, elevation: {alt.degrees}")
 
             # Update tracking data
