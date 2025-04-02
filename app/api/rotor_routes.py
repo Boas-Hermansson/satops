@@ -1,5 +1,6 @@
 import subprocess
-from fastapi import APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException
+from api.dependencies import get_tracker
 
 rotor_router = APIRouter()
 
@@ -7,13 +8,10 @@ rotor_router = APIRouter()
 
 
 @rotor_router.get('/status')
-async def rotor_status():
+async def rotor_status(tracker = Depends(get_tracker)):
     """Get the rotor status from rotctl"""
-    # TODO try to connect using sockets instead
+    azimuth, elevation = await tracker.rotor.read()
     try:
-        output = subprocess.check_output(["tctl", "p"]).splitlines()
-        azimuth = output[0].decode()
-        elevation = output[1].decode()
         return {
             "azimuth": azimuth,
             "elevation": elevation
@@ -26,7 +24,8 @@ async def rotor_status():
 @rotor_router.post('/control')
 async def rotor_control(
     azimuth: int,
-    elevation: int
+    elevation: int,
+    tracker = Depends(get_tracker)
 ):
     """Manually point the rotor to a specific direction"""
     if azimuth > 180 or azimuth < -180:
@@ -36,7 +35,7 @@ async def rotor_control(
         raise HTTPException(status_code=400, detail="Elevation must be between 0 and 90")
     
     try:
-        subprocess.check_call(["rotctl", "P", str(azimuth), str(elevation)])
+        await tracker.rotor.write(azimuth, elevation)
         return {"success": True}
     except Exception as e:
         return {

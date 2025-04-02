@@ -9,35 +9,10 @@ from skyfield.api import load, wgs84
 from skyfield.iokit import parse_tle_file
 from pydantic import BaseModel
 import subprocess
-import socket
+from services.rotor_controller import RotorController
 
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), "../config")
 TLE_FILE_PATH = os.path.join(CONFIG_DIR, "disco.tle")
-
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(("192.168.1.9", 4533))
-
-
-def write_rotor(az, el):
-    global sock
-    sock.send((f"P {az} {el}").encode())
-    # this is the return code for rotctl on the
-    # rotator device. we just throw this value away
-    # still important we read it, so the socket is empty
-    res = sock.recv(64).decode()
-
-def read_rotor():
-    global sock
-    sock.send("p".encode())
-    received = sock.recv(64).decode()
-    received = received.splitlines()
-    
-    # the output is decoded like this for clarity
-    az = received[0]
-    el = received[1]
-    return az, el
-
-
 
 class Pass(BaseModel):
     # Times are in UTC
@@ -82,6 +57,9 @@ class SatelliteTracker:
         
         # Load the satellite
         self.load_satellite()
+
+    async def _async_init(self):
+        self.rotor = await RotorController.initialize()
     
     def _load_gs_location(self):
         """Load location from file or use default"""
@@ -247,7 +225,7 @@ class SatelliteTracker:
         self.gs_logger.info(f"Started tracking {self.satellite_name}, next pass at {next_pass.rise}")
         return True
     
-    def _track_satellite(self, sat_pass):
+    async def _track_satellite(self, sat_pass):
         """Track the satellite during a pass"""
         # Sleep till the rise time
         now = datetime.now(timezone.utc)
@@ -278,7 +256,8 @@ class SatelliteTracker:
             
             # Send azimuth, elevation to rotctl
             # subprocess.run(["rotctl", "P", az.degrees, alt.degrees])
-            write_rotor(az.degrees, alt.degrees)
+            await self.rotor.write(az.degrees, alt.degrees)
+
             
             self.gs_logger.info(f"Setting azimuth: {az.degrees}, elevation: {alt.degrees}")
 
